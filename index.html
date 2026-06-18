@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Mensageria · Living Parque Jardim Jasmim</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --brand: #1a5c3a;
+    --brand-light: #e8f5ee;
+    --brand-mid: #2d7a52;
+    --text: #1a1a1a;
+    --text-muted: #666;
+    --border: #e0e0e0;
+    --bg: #f7f8f6;
+    --white: #ffffff;
+    --danger: #c0392b;
+    --danger-light: #fdf0ef;
+    --success: #1a5c3a;
+    --success-light: #e8f5ee;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding-bottom: 2rem;
+  }
+
+  header {
+    background: var(--brand);
+    color: white;
+    padding: 1rem 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  .header-icon {
+    width: 36px;
+    height: 36px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .header-icon svg { width: 20px; height: 20px; fill: white; }
+
+  header h1 { font-size: 15px; font-weight: 600; line-height: 1.2; }
+  header p { font-size: 12px; opacity: 0.75; margin-top: 1px; }
+
+  .timestamp-bar {
+    background: var(--brand-mid);
+    color: rgba(255,255,255,0.9);
+    font-size: 12px;
+    padding: 5px 1.25rem;
+    letter-spacing: 0.02em;
+  }
+
+  main { padding: 1rem; max-width: 480px; margin: 0 auto; }
+
+  .card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem 1.25rem;
+    margin-bottom: 0.875rem;
+  }
+
+  .card-title {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--brand);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .card-title svg { width: 14px; height: 14px; fill: var(--brand); flex-shrink: 0; }
+
+  .field { margin-bottom: 12px; }
+  .field:last-child { margin-bottom: 0; }
+
+  label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-muted);
+    margin-bottom: 5px;
+  }
+
+  .req { color: var(--danger); margin-left: 2px; }
+
+  input[type=text], input[type=number], select, textarea {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    font-size: 15px;
+    color: var(--text);
+    background: var(--white);
+    outline: none;
+    transition: border-color 0.15s;
+    -webkit-appearance: none;
+    appearance: none;
+    font-family: inherit;
+  }
+
+  input:focus, textarea:focus, select:focus {
+    border-color: var(--brand);
+    box-shadow: 0 0 0 3px rgba(26,92,58,0.12);
+  }
+
+  input.err, textarea.err { border-color: var(--danger); }
+
+  .err-msg {
+    font-size: 12px;
+    color: var(--danger);
+    margin-top: 4px;
+    display: none;
+  }
+
+  textarea { resize: none; line-height: 1.5; }
+
+  .photo-zone {
+    border: 1.5px dashed var(--border);
+    border-radius: var(--radius);
+    min-height: 150px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    background: #fafafa;
+    transition: border-color 0.2s, background 0.2s;
+  }
+
+  .photo-zone:hover { border-color: var(--brand); background: var(--brand-light); }
+  .photo-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+  .photo-zone svg { width: 32px; height: 32px; fill: #bbb; }
+  .photo-zone p { font-size: 13px; color: var(--text-muted); text-align: center; padding: 0 1rem; }
+  .photo-zone small { font-size: 11px; color: #bbb; }
+
+  #photoPreview {
+    width: 100%;
+    max-height: 220px;
+    object-fit: cover;
+    border-radius: var(--radius);
+    display: none;
+  }
+
+  .photo-badge {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--success);
+    background: var(--success-light);
+    border-radius: 20px;
+    padding: 4px 10px;
+    margin-top: 8px;
+  }
+
+  .photo-badge svg { width: 13px; height: 13px; fill: var(--success); }
+
+  canvas#sig {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: #fafafa;
+    touch-action: none;
+    display: block;
+    width: 100%;
+    height: 150px;
+    cursor: crosshair;
+  }
+
+  canvas#sig.signed { background: #fffef9; }
+
+  .sig-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 8px;
+  }
+
+  .sig-hint { font-size: 12px; color: var(--text-muted); }
+
+  .btn-clear {
+    font-size: 12px;
+    color: var(--text-muted);
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 4px 12px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  .btn-clear:hover { border-color: var(--danger); color: var(--danger); }
+
+  .btn-submit {
+    width: 100%;
+    padding: 15px;
+    font-size: 16px;
+    font-weight: 600;
+    color: white;
+    background: var(--brand);
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+    margin-top: 0.25rem;
+    font-family: inherit;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: background 0.15s, transform 0.1s;
+  }
+
+  .btn-submit:hover { background: var(--brand-mid); }
+  .btn-submit:active { transform: scale(0.98); }
+  .btn-submit:disabled { background: #999; cursor: not-allowed; }
+  .btn-submit svg { width: 18px; height: 18px; fill: white; }
+
+  .spinner {
+    width: 18px; height: 18px;
+    border: 2px solid rgba(255,255,255,0.4);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: none;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .success-screen {
+    display: none;
+    text-align: center;
+    padding: 3rem 1.5rem;
+  }
+
+  .success-icon {
+    width: 72px;
+    height: 72px;
+    background: var(--success-light);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.5rem;
+  }
+
+  .success-icon svg { width: 36px; height: 36px; fill: var(--brand); }
+
+  .success-screen h2 { font-size: 22px; font-weight: 600; color: var(--text); margin-bottom: 0.5rem; }
+  .success-screen p { font-size: 14px; color: var(--text-muted); margin-bottom: 1.75rem; line-height: 1.6; }
+
+  .btn-new {
+    background: none;
+    border: 1.5px solid var(--brand);
+    color: var(--brand);
+    border-radius: var(--radius);
+    padding: 12px 28px;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.15s;
+  }
+
+  .btn-new:hover { background: var(--brand-light); }
+
+  .toast {
+    position: fixed;
+    bottom: 1.5rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: #333;
+    color: white;
+    font-size: 13px;
+    padding: 10px 18px;
+    border-radius: 20px;
+    transition: transform 0.3s;
+    z-index: 100;
+    white-space: nowrap;
+  }
+
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.danger { background: var(--danger); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-icon">
+    <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+  </div>
+  <div>
+    <h1>Mensageria</h1>
+    <p>Living Parque Jardim Jasmim</p>
+  </div>
+</header>
+<div class="timestamp-bar" id="tsBar"></div>
+
+<main>
+  <div id="formView">
+
+    <div class="card">
+      <div class="card-title">
+        <svg viewBox="0 0 24 24"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>
+        Dados do entregador
+      </div>
+
+      <div class="field">
+        <label>Nome completo <span class="req">*</span></label>
+        <input type="text" id="nome" placeholder="Nome do entregador" autocomplete="off">
+        <div class="err-msg" id="e-nome">Informe o nome do entregador</div>
+      </div>
+
+      <div class="field">
+        <label>Documento de identidade <span class="req">*</span></label>
+        <input type="text" id="doc" placeholder="RG ou CPF" autocomplete="off">
+        <div class="err-msg" id="e-doc">Informe o número do documento</div>
+      </div>
+
+      <div class="field">
+        <label>Empresa / transportadora</label>
+        <input type="text" id="empresa" placeholder="Ex: Correios, Mercado Envios, iFood..." autocomplete="off">
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <svg viewBox="0 0 24 24"><path d="M21 16.5c0 .38-.21.71-.53.88l-7.9 4.44c-.16.09-.34.13-.53.13s-.37-.04-.53-.13l-7.9-4.44A1 1 0 0 1 3 16.5v-9c0-.38.21-.71.53-.88l7.9-4.44c.16-.09.34-.13.53-.13s.37.04.53.13l7.9 4.44c.32.17.53.5.53.88v9M12 4.15L6.04 7.5 12 10.85l5.96-3.35L12 4.15M5 15.91l6 3.38v-6.71L5 9.21v6.7m14 0v-6.7l-6 3.37v6.71l6-3.38z"/></svg>
+        Encomendas
+      </div>
+
+      <div class="field">
+        <label>Quantidade de volumes <span class="req">*</span></label>
+        <input type="number" id="volumes" placeholder="Ex: 3" min="1">
+        <div class="err-msg" id="e-vol">Informe a quantidade de volumes</div>
+      </div>
+
+      <div class="field">
+        <label>Observações</label>
+        <textarea id="obs" rows="2" placeholder="Ex: caixa avariada, volume frágil, requer refrigeração..."></textarea>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <svg viewBox="0 0 24 24"><path d="M12 15.2A3.2 3.2 0 0 1 8.8 12 3.2 3.2 0 0 1 12 8.8 3.2 3.2 0 0 1 15.2 12 3.2 3.2 0 0 1 12 15.2M12 7A5 5 0 0 0 7 12a5 5 0 0 0 5 5 5 5 0 0 0 5-5A5 5 0 0 0 12 7M2 13h2V11H2M20 13h2V11H20M11 2v2h2V2M11 20v2h2V20M4.92 5.34 3.5 6.76l1.42 1.41 1.41-1.41M17.66 18.08l-1.41 1.41 1.41 1.42 1.42-1.42M18.08 6.34 16.66 4.92l-1.41 1.42 1.41 1.41M6.34 18.08l-1.42 1.42 1.42 1.41 1.41-1.41"/></svg>
+        Foto das encomendas
+      </div>
+
+      <img id="photoPreview" alt="Foto das encomendas">
+      <div class="photo-zone" id="photoZone">
+        <input type="file" id="fotoInput" accept="image/*" capture="environment">
+        <svg viewBox="0 0 24 24"><path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2m8 3a5 5 0 0 0-5 5 5 5 0 0 0 5 5 5 5 0 0 0 5-5 5 5 0 0 0-5-5m0 2a3 3 0 0 1 3 3 3 3 0 0 1-3 3 3 3 0 0 1-3-3 3 3 0 0 1 3-3z"/></svg>
+        <p>Toque para fotografar as encomendas</p>
+        <small>A câmera abrirá automaticamente</small>
+      </div>
+      <div class="photo-badge" id="photoBadge">
+        <svg viewBox="0 0 24 24"><path d="M21 7L9 19l-5.5-5.5 1.41-1.41L9 16.17 19.59 5.59 21 7z"/></svg>
+        Foto capturada
+      </div>
+      <div class="err-msg" id="e-foto">Tire uma foto das encomendas</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <svg viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25z"/></svg>
+        Assinatura do entregador
+      </div>
+
+      <canvas id="sig"></canvas>
+      <div class="sig-row">
+        <span class="sig-hint" id="sigHint">Entregador assina acima com o dedo</span>
+        <button class="btn-clear" onclick="limparSig()">↺ Limpar</button>
+      </div>
+      <div class="err-msg" id="e-sig">A assinatura do entregador é obrigatória</div>
+    </div>
+
+    <button class="btn-submit" id="btnSubmit" onclick="enviar()">
+      <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
+      <span id="btnText">Confirmar recebimento</span>
+      <div class="spinner" id="spinner"></div>
+    </button>
+
+  </div>
+
+  <div class="success-screen" id="successView">
+    <div class="success-icon">
+      <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
+    </div>
+    <h2>Recebimento registrado!</h2>
+    <p id="successDetail"></p>
+    <button class="btn-new" onclick="novo()">+ Registrar nova entrega</button>
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const CREDENTIALS = {
+  client_email: "mensageria-living@eighth-ridge-499716-v5.iam.gserviceaccount.com",
+  private_key: "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCrOiH94CSIHVVo\nJGIIZiLbF0MExqujcllOrtM9jU4TAxrMXUaCNw0y+6ba9i5iZfLmXCD3kcnJZQv/\nKEoib0rReLSMoilXvxlMKZAPgUvoDixuMaVj1u73/fpYSdULAIdv6RqnWQVPvQh8\nufPASQAFdGn+xeJ2oyB+sBVYeKxkFqIqQ+tVPpIBbBWuXjhjIon7iu+ZX/vg8cvt\nPSVCZ/0+S4C5BMMsMU6RTIRSJ+/SHD4pmu3NzfI7ye++11X4V/Ry6tR1aFJFuhjX\nO/nHnHRcVamDcWqTj8u0Q07HI28NkBvxZGntZ6PlPaL6Gg/WJSLmTOsxJKAAK4Ql\n/yjA7XS/AgMBAAECggEABNx/qTo7OfTAlKuub4KcLBA7AjW0cHgx+j6TF2+dmdiV\nYtv7Fn4C9+xBI9JS0CReLcAhMiYyI8T5/uKL8vJUniHeg7z5ji40xP7LwkTvfMUk\n6clVuBdFbZuzsdysGcXdZ9tRuxKXSK5F7BSeIQVxj2DAvvpV9ab9UzDN9QG9aJIC\ntoaPhBVZ8OZhMFLv0yC8VPjJZwM3XAVbwtB6CepCNneVWvpY0nJRf73mHJeJYPjm\nIJjQh66Acs3ZrSlZ9sX6gMhKP64HY/N8bB2VUR49Hyd8wYgE75axwpO4f6lP3mex\nZsggvkLjKBtPBXdznjXxXvxvQ5TYa/n/6O2uvQ1S4QKBgQDR5S8oO8T4tThiW/Kn\nQ+diIezy4Ww/rCDT2NT7i8O28eR4b1d1o6l//NEN9A9k4eRhu/OFsjuDxJ7kaGKR\nN7aKdSBPcbzImKh0j4l3E6m51o+ArvLFmyvdZjOGZO8Kw6klrK3c1Uw5l9WDzE+Q\nkAJuroVE59dd8frgKqRU3v4CiQKBgQDQ1pAIWpItZXk28KAyFnC0aRohEZKMhfwE\ncEfxP+kkK1GAdb7CASxdwIApEaWeCdzP1wGZYvlrQktbReVu+VLQnew5QUUedENl\naaJahfbSurTWDBBrmvmfEH62NzZh8VuRrJvVUZOnKWMa8dSe9wnnjAI59XOZFF6E\nk5R5zQOLBwKBgDRIt694+/7L/YiayN4bjxalxsVVm8ZclSzQNXWXgiAfLz9E1O9r\n3jwQeO7V3cPOdTpXPDkQhby0DLRuwCbWTvU8adkARvtc85Fdc+uijUPKi6KNcdIB\nbjLPU4RlvhnbVVYaJpD83Oj3xmr3SNaE2OZDONVKPx6auVh/psGxbmqpAoGBAJkh\na3Wkq+D7shkV8fEoQTYYhx9OWk4OBNBgYHBGs7ZgyR9PtzNcVuLbv13d4bnzc2U3\nO6X0S/1ZHBZuNyDbUt1Dny4QbRU6nRyki3ajGmxEmUsGh5fPiFAZcUA9VfQVXVaA\n4bdWXNVK5K+iOYziifGt2QgUsdHCfNfruwhgysNLAoGAZHtlwTGKY8BKVxle9m8d\nazjCmnhLq3tdR0tegNXJRpJioeKItGvSjoWIC0fkc3maF68Nd1aHH5lyYrroxInq\niYw3ELzGlsn58c/COEoMAIBFDcNotAXs3BnRjZGqOjuKIqiR5/TBI2BVaqfeq7a9\nVVfHL9BQu+PFegapGEHS0CA=\n-----END PRIVATE KEY-----\n"
+};
+
+const FOLDER_NAME = "Mensageria - Living Parque Jardim Jasmim";
+
+let hasSig = false;
+let hasPhoto = false;
+let folderId = null;
+let accessToken = null;
+let tokenExpiry = 0;
+
+function setTimestamp() {
+  const now = new Date();
+  document.getElementById('tsBar').textContent =
+    now.toLocaleString('pt-BR', { weekday:'long', day:'2-digit', month:'long', year:'numeric', hour:'2-digit', minute:'2-digit' });
+}
+setTimestamp();
+setInterval(setTimestamp, 30000);
+
+// ── Assinatura ──────────────────────────────────────────────
+const canvas = document.getElementById('sig');
+const ctx = canvas.getContext('2d');
+let drawing = false;
+
+function resizeCanvas() {
+  const rect = canvas.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  const data = hasSig ? canvas.toDataURL() : null;
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  ctx.scale(dpr, dpr);
+  ctx.strokeStyle = '#111';
+  ctx.lineWidth = 2.2;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  if (data) { const img = new Image(); img.onload = () => ctx.drawImage(img, 0, 0, rect.width, rect.height); img.src = data; }
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+function pt(e) {
+  const r = canvas.getBoundingClientRect();
+  const s = e.touches ? e.touches[0] : e;
+  return { x: s.clientX - r.left, y: s.clientY - r.top };
+}
+
+canvas.addEventListener('mousedown', e => { drawing = true; const p = pt(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); });
+canvas.addEventListener('mousemove', e => { if (!drawing) return; const p = pt(e); ctx.lineTo(p.x, p.y); ctx.stroke(); markSig(); });
+canvas.addEventListener('mouseup', () => drawing = false);
+canvas.addEventListener('touchstart', e => { e.preventDefault(); drawing = true; const p = pt(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); }, { passive: false });
+canvas.addEventListener('touchmove', e => { e.preventDefault(); if (!drawing) return; const p = pt(e); ctx.lineTo(p.x, p.y); ctx.stroke(); markSig(); }, { passive: false });
+canvas.addEventListener('touchend', () => drawing = false);
+
+function markSig() {
+  hasSig = true;
+  canvas.classList.add('signed');
+  document.getElementById('sigHint').textContent = 'Assinatura capturada ✓';
+  document.getElementById('e-sig').style.display = 'none';
+}
+
+function limparSig() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  hasSig = false;
+  canvas.classList.remove('signed');
+  document.getElementById('sigHint').textContent = 'Entregador assina acima com o dedo';
+}
+
+// ── Foto ────────────────────────────────────────────────────
+const fotoInput = document.getElementById('fotoInput');
+const preview = document.getElementById('photoPreview');
+const photoZone = document.getElementById('photoZone');
+
+fotoInput.addEventListener('change', () => {
+  const file = fotoInput.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    preview.src = e.target.result;
+    preview.style.display = 'block';
+    photoZone.style.display = 'none';
+    document.getElementById('photoBadge').style.display = 'flex';
+    hasPhoto = true;
+    document.getElementById('e-foto').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+});
+
+// ── Toast ───────────────────────────────────────────────────
+function toast(msg, danger = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast' + (danger ? ' danger' : '') + ' show';
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+// ── Validação ───────────────────────────────────────────────
+function validar() {
+  let ok = true;
+  const check = (id, errId, condition) => {
+    const el = document.getElementById(id);
+    const em = document.getElementById(errId);
+    if (condition) { el.classList.remove('err'); em.style.display = 'none'; }
+    else { el.classList.add('err'); em.style.display = 'block'; ok = false; }
+  };
+  check('nome', 'e-nome', document.getElementById('nome').value.trim());
+  check('doc', 'e-doc', document.getElementById('doc').value.trim());
+  check('volumes', 'e-vol', document.getElementById('volumes').value && parseInt(document.getElementById('volumes').value) >= 1);
+  if (!hasPhoto) { document.getElementById('e-foto').style.display = 'block'; ok = false; }
+  if (!hasSig) { document.getElementById('e-sig').style.display = 'block'; ok = false; }
+  return ok;
+}
+
+// ── Google Auth (JWT) ────────────────────────────────────────
+async function getToken() {
+  if (accessToken && Date.now() < tokenExpiry) return accessToken;
+
+  const now = Math.floor(Date.now() / 1000);
+  const header = btoa(JSON.stringify({ alg: 'RS256', typ: 'JWT' })).replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_');
+  const claim = btoa(JSON.stringify({
+    iss: CREDENTIALS.client_email,
+    scope: 'https://www.googleapis.com/auth/drive.file',
+    aud: 'https://oauth2.googleapis.com/token',
+    iat: now, exp: now + 3600
+  })).replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_');
+
+  const unsigned = header + '.' + claim;
+  const keyData = CREDENTIALS.private_key.replace(/-----BEGIN PRIVATE KEY-----|-----END PRIVATE KEY-----|\n/g, '');
+  const binaryKey = Uint8Array.from(atob(keyData), c => c.charCodeAt(0));
+
+  const cryptoKey = await crypto.subtle.importKey(
+    'pkcs8', binaryKey.buffer,
+    { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
+    false, ['sign']
+  );
+
+  const sig = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', cryptoKey, new TextEncoder().encode(unsigned));
+  const sigB64 = btoa(String.fromCharCode(...new Uint8Array(sig))).replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_');
+  const jwt = unsigned + '.' + sigB64;
+
+  const resp = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: `grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=${jwt}`
+  });
+  const data = await resp.json();
+  accessToken = data.access_token;
+  tokenExpiry = Date.now() + (data.expires_in - 60) * 1000;
+  return accessToken;
+}
+
+// ── Google Drive ─────────────────────────────────────────────
+async function getOrCreateFolder(token) {
+  if (folderId) return folderId;
+  const q = encodeURIComponent(`name='${FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and trashed=false`);
+  const r = await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id)`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  const d = await r.json();
+  if (d.files && d.files.length > 0) { folderId = d.files[0].id; return folderId; }
+
+  const cr = await fetch('https://www.googleapis.com/drive/v3/files', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: FOLDER_NAME, mimeType: 'application/vnd.google-apps.folder' })
+  });
+  const cd = await cr.json();
+  folderId = cd.id;
+
+  await fetch(`https://www.googleapis.com/drive/v3/files/${folderId}/permissions`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ role: 'reader', type: 'anyone' })
+  });
+
+  return folderId;
+}
+
+async function uploadPDF(token, folder, pdfBlob, filename) {
+  const meta = JSON.stringify({ name: filename, parents: [folder] });
+  const form = new FormData();
+  form.append('metadata', new Blob([meta], { type: 'application/json' }));
+  form.append('file', pdfBlob, filename);
+
+  const r = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: form
+  });
+  return await r.json();
+}
+
+// ── Gerar PDF ────────────────────────────────────────────────
+async function gerarPDF(dados) {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  const W = 210, M = 16;
+
+  const verde = [26, 92, 58];
+  const verdeClaro = [232, 245, 238];
+  const cinza = [102, 102, 102];
+  const bordaColor = [220, 220, 220];
+
+  doc.setFillColor(...verde);
+  doc.rect(0, 0, W, 32, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'bold');
+  doc.text('COMPROVANTE DE RECEBIMENTO', M, 13);
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  doc.text('Living Parque Jardim Jasmim · Mensageria', M, 20);
+  doc.setFontSize(8);
+  doc.text(dados.timestamp, M, 27);
+
+  let y = 42;
+
+  function secao(titulo, campos) {
+    doc.setFillColor(...verdeClaro);
+    doc.rect(M, y, W - M * 2, 7, 'F');
+    doc.setTextColor(...verde);
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.text(titulo.toUpperCase(), M + 3, y + 4.8);
+    y += 10;
+
+    campos.forEach(([label, valor]) => {
+      doc.setTextColor(...cinza);
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.text(label, M + 3, y);
+      doc.setTextColor(20, 20, 20);
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.text(valor || '—', M + 3, y + 5);
+      y += 12;
+    });
+    y += 3;
+  }
+
+  secao('Entregador', [
+    ['Nome completo', dados.nome],
+    ['Documento', dados.doc],
+    ['Empresa / transportadora', dados.empresa || 'Não informado'],
+  ]);
+
+  secao('Encomendas', [
+    ['Quantidade de volumes', dados.volumes + ' volume(s)'],
+    ['Observações', dados.obs || 'Nenhuma'],
+  ]);
+
+  if (dados.fotoData) {
+    doc.setFillColor(...verdeClaro);
+    doc.rect(M, y, W - M * 2, 7, 'F');
+    doc.setTextColor(...verde);
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.text('FOTO DAS ENCOMENDAS', M + 3, y + 4.8);
+    y += 10;
+
+    try {
+      const imgW = W - M * 2;
+      const imgH = 70;
+      doc.addImage(dados.fotoData, 'JPEG', M, y, imgW, imgH, '', 'MEDIUM');
+      y += imgH + 5;
+    } catch(e) { y += 5; }
+  }
+
+  if (dados.sigData) {
+    doc.setFillColor(...verdeClaro);
+    doc.rect(M, y, W - M * 2, 7, 'F');
+    doc.setTextColor(...verde);
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.text('ASSINATURA DO ENTREGADOR', M + 3, y + 4.8);
+    y += 10;
+
+    const sigW = 100;
+    const sigH = 35;
+    const sigX = M;
+    doc.setDrawColor(...bordaColor);
+    doc.rect(sigX, y, sigW, sigH);
+    try {
+      doc.addImage(dados.sigData, 'PNG', sigX + 2, y + 2, sigW - 4, sigH - 4);
+    } catch(e) {}
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.setTextColor(...cinza);
+    doc.text('Assinatura colhida digitalmente em ' + dados.timestamp, M, y + sigH + 5);
+    y += sigH + 12;
+  }
+
+  doc.setDrawColor(...bordaColor);
+  doc.line(M, y, W - M, y);
+  y += 5;
+  doc.setFontSize(7);
+  doc.setTextColor(...cinza);
+  doc.setFont('helvetica', 'normal');
+  doc.text('Documento gerado automaticamente pelo sistema de mensageria · Living Parque Jardim Jasmim', M, y);
+
+  return doc.output('blob');
+}
+
+// ── Enviar ───────────────────────────────────────────────────
+async function enviar() {
+  if (!validar()) { toast('Preencha todos os campos obrigatórios', true); return; }
+
+  const btn = document.getElementById('btnSubmit');
+  const txt = document.getElementById('btnText');
+  const spin = document.getElementById('spinner');
+  btn.disabled = true;
+  txt.textContent = 'Enviando...';
+  spin.style.display = 'block';
+
+  try {
+    const now = new Date();
+    const ts = now.toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+    const filets = now.toISOString().replace(/[:.]/g, '-').slice(0, 16);
+    const nomeVal = document.getElementById('nome').value.trim();
+
+    const dados = {
+      nome: nomeVal,
+      doc: document.getElementById('doc').value.trim(),
+      empresa: document.getElementById('empresa').value.trim(),
+      volumes: document.getElementById('volumes').value,
+      obs: document.getElementById('obs').value.trim(),
+      fotoData: hasPhoto ? preview.src : null,
+      sigData: hasSig ? canvas.toDataURL('image/png') : null,
+      timestamp: ts
+    };
+
+    toast('Gerando PDF...');
+    const pdfBlob = await gerarPDF(dados);
+
+    toast('Conectando ao Drive...');
+    const token = await getToken();
+    const folder = await getOrCreateFolder(token);
+
+    const nomeSanitizado = nomeVal.replace(/[^a-zA-Z0-9À-ú ]/g, '').trim().replace(/ +/g, '_');
+    const filename = `Entrega_${filets}_${nomeSanitizado}.pdf`;
+
+    toast('Salvando no Drive...');
+    const result = await uploadPDF(token, folder, pdfBlob, filename);
+
+    document.getElementById('formView').style.display = 'none';
+    document.getElementById('successView').style.display = 'block';
+    document.getElementById('successDetail').innerHTML =
+      `Comprovante salvo com sucesso no Google Drive.<br><br>` +
+      `<strong>${dados.volumes} volume(s)</strong> · ${dados.nome}<br>` +
+      `${ts}`;
+
+  } catch(err) {
+    console.error(err);
+    toast('Erro ao enviar. Verifique a conexão.', true);
+    btn.disabled = false;
+    txt.textContent = 'Confirmar recebimento';
+    spin.style.display = 'none';
+  }
+}
+
+function novo() {
+  ['nome','doc','empresa','volumes','obs'].forEach(id => document.getElementById(id).value = '');
+  document.querySelectorAll('.err').forEach(el => el.classList.remove('err'));
+  document.querySelectorAll('.err-msg').forEach(el => el.style.display = 'none');
+  preview.style.display = 'none';
+  preview.src = '';
+  photoZone.style.display = 'flex';
+  document.getElementById('photoBadge').style.display = 'none';
+  fotoInput.value = '';
+  hasPhoto = false;
+  limparSig();
+  setTimestamp();
+  document.getElementById('formView').style.display = 'block';
+  document.getElementById('successView').style.display = 'none';
+  document.getElementById('btnSubmit').disabled = false;
+  document.getElementById('btnText').textContent = 'Confirmar recebimento';
+  document.getElementById('spinner').style.display = 'none';
+  window.scrollTo(0, 0);
+}
+</script>
+</body>
+</html>
