@@ -1,29 +1,250 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Mensageria - Living Parque Jardim Jasmim</title>
-    <style>
-        html, body {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background-color: #f4f6f8;
-        }
-        iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
-            display: block;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Mensageria - Living Jasmim</title>
+  <style>
+    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+    body { background-color: #f4f6f8; margin: 0; padding: 0; color: #2d3748; display: flex; flex-direction: column; min-height: 100vh; }
+    
+    header { background-color: #1a202c; color: white; padding: 20px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    header h1 { margin: 0; font-size: 22px; font-weight: 600; letter-spacing: 0.5px; }
+    header p { margin: 5px 0 0 0; font-size: 14px; color: #a0aec0; }
+    
+    main { flex: 1; max-width: 600px; width: 100%; margin: 0 auto; padding: 20px; }
+    
+    .card { background: white; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
+    .card-title { font-weight: 600; font-size: 15px; margin-bottom: 15px; display: flex; align-items: center; color: #4a5568; text-transform: uppercase; letter-spacing: 0.5px; }
+    
+    .form-group { margin-bottom: 15px; }
+    label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; color: #718096; }
+    input[type="text"], input[type="number"], textarea { width: 100%; padding: 12px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 15px; background-color: #fff; color: #2d3748; transition: border-color 0.2s; }
+    input:focus, textarea:focus { outline: none; border-color: #4a5568; }
+    
+    .camera-box { border: 2px dashed #cbd5e0; border-radius: 6px; padding: 30px 20px; text-align: center; cursor: pointer; background: #f7fafc; transition: all 0.2s; position: relative; }
+    .camera-box:hover { border-color: #4a5568; background: #edf2f7; }
+    .camera-box p { margin: 8px 0 0 0; font-size: 14px; font-weight: 500; }
+    .camera-box small { color: #a0aec0; font-size: 11px; display: block; margin-top: 4px; }
+    #preview-foto { max-width: 100%; max-height: 200px; border-radius: 6px; display: none; margin: 10px auto 0 auto; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    #foto-input { display: none; }
+    .foto-capturada-tag { display: none; background: #48bb78; color: white; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: bold; width: fit-content; margin: 0 auto 8px auto; }
+    
+    canvas { border: 1px solid #cbd5e0; border-radius: 6px; width: 100%; height: 180px; background-color: #fff; touch-action: none; display: block; }
+    .canvas-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+    .canvas-hint { font-size: 12px; color: #a0aec0; }
+    .btn-limpar { background: none; border: none; color: #e53e3e; font-size: 13px; font-weight: 500; cursor: pointer; padding: 5px; }
+    
+    .btn-enviar { width: 100%; background-color: #1a202c; color: white; border: none; padding: 15px; border-radius: 6px; font-size: 16px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: background-color 0.2s; }
+    .btn-enviar:hover { background-color: #2d3748; }
+    .btn-enviar:disabled { background-color: #a0aec0; cursor: not-allowed; }
+    
+    #tela-sucesso { display: none; text-align: center; padding: 40px 20px; }
+    .success-icon { width: 60px; height: 60px; background: #48bb78; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px; margin: 0 auto 20px auto; font-weight: bold; }
+    #tela-sucesso h2 { margin: 0 0 10px 0; font-size: 22px; color: #1a202c; }
+    #tela-sucesso p { margin: 0 0 25px 0; color: #718096; font-size: 15px; }
+    .btn-novo { background-color: #1a202c; color: white; border: none; padding: 12px 25px; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; }
+    
+    #loader { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); justify-content: center; align-items: center; z-index: 1000; font-weight: 600; color: #1a202c; font-size: 16px; }
+  </style>
 </head>
 <body>
 
-    <iframe src="https://script.google.com/macros/s/AKfycbwloVT9qWjjOb03tCsReYu2NMj9wNj1IOtJDuAU6HPowsNVOb7fg3xTkEn7bBwoBfZt/exec"></iframe>
+  <div id="loader">Processando e gerando recibo...</div>
 
+  <header>
+    <h1>Mensageria</h1>
+    <p>Living Parque Jardim Jasmim</p>
+  </header>
+
+  <main id="conteudo-principal">
+    <form id="form-mensageria" onsubmit="enviarDados(event)">
+      
+      <div class="card">
+        <div class="card-title">Dados do entregador</div>
+        <div class="form-group">
+          <label>Nome do entregador *</label>
+          <input type="text" id="nome" required placeholder="Informe o nome do entregador">
+        </div>
+        <div class="form-group">
+          <label>Número do documento *</label>
+          <input type="number" id="documento" required placeholder="Informe o número do documento">
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Encomendas</div>
+        <div class="form-group">
+          <label>Quantidade de volumes *</label>
+          <input type="number" id="volumes" min="1" required placeholder="Informe a quantidade de volumes">
+        </div>
+        <div class="form-group">
+          <label>Observações (Opcional)</label>
+          <textarea id="observacao" rows="3" placeholder="Avaria, embalagem rasgada, etc..."></textarea>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Foto das encomendas</div>
+        <div class="foto-capturada-tag" id="tag-foto">FOTO CAPTURADA</div>
+        <div class="camera-box" onclick="document.getElementById('foto-input').click()">
+          <input type="file" id="foto-input" accept="image/*" capture="environment" onchange="carregarFoto(this)">
+          <div id="instrucoes-foto">
+            <p>Toque para fotografar as encomendas</p>
+            <small>A câmera abrirá automaticamente</small>
+          </div>
+          <img id="preview-foto" src="" alt="Preview">
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Assinatura do entregador</div>
+        <canvas id="canvas-assinatura"></canvas>
+        <div class="canvas-actions">
+          <span class="canvas-hint">Entregador assina acima com o dedo</span>
+          <button type="button" class="btn-limpar" onclick="limparAssinatura()">Limpar</button>
+        </div>
+      </div>
+
+      <button type="submit" class="btn-enviar" id="btn-submit">Enviar Registro</button>
+    </form>
+  </main>
+
+  <div id="tela-sucesso">
+    <div class="success-icon">✓</div>
+    <h2>Recebimento registrado!</h2>
+    <p>O PDF foi gerado e salvo com sucesso no Google Drive.</p>
+    <button class="btn-novo" onclick="reiniciarFormulario()">Novo Recebimento</button>
+  </div>
+
+  <script>
+    // URL do Web App gerada no Passo 1
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwloVT9qWjjOb03tCsReYu2NMj9wNj1IOtJDuAU6HPowsNVOb7fg3xTkEn7bBwoBfZt/exec";
+
+    const canvas = document.getElementById('canvas-assinatura');
+    const ctx = canvas.getContext('2d');
+    let desenhando = false;
+    let assinou = false;
+
+    function ajustarCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width;
+      canvas.height = rect.height;
+      ctx.lineWidth = 3;
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = '#1a202c';
+    }
+
+    window.addEventListener('resize', ajustarCanvas);
+    window.addEventListener('load', ajustarCanvas);
+
+    function obterPosicao(e) {
+      const rect = canvas.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      return { x: clientX - rect.left, y: clientY - rect.top };
+    }
+
+    function iniciarDesenho(e) {
+      desenhando = true;
+      assinou = true;
+      const pos = obterPosicao(e);
+      ctx.beginPath();
+      ctx.moveTo(pos.x, pos.y);
+      e.preventDefault();
+    }
+
+    function desenhar(e) {
+      if (!desenhando) return;
+      const pos = obterPosicao(e);
+      ctx.lineTo(pos.x, pos.y);
+      ctx.stroke();
+      e.preventDefault();
+    }
+
+    function pararDesenho() { desenhando = false; }
+
+    canvas.addEventListener('mousedown', iniciarDesenho);
+    canvas.addEventListener('mousemove', desenhar);
+    canvas.addEventListener('mouseup', pararDesenho);
+    canvas.addEventListener('mouseleave', pararDesenho);
+
+    canvas.addEventListener('touchstart', iniciarDesenho);
+    canvas.addEventListener('touchmove', desenhar);
+    canvas.addEventListener('touchend', pararDesenho);
+
+    function limparAssinatura() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      assinou = false;
+    }
+
+    let fotoBase64 = "";
+    function carregarFoto(input) {
+      if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          fotoBase64 = e.target.result;
+          document.getElementById('preview-foto').src = fotoBase64;
+          document.getElementById('preview-foto').style.display = 'block';
+          document.getElementById('instrucoes-foto').style.display = 'none';
+          document.getElementById('tag-foto').style.display = 'block';
+        };
+        reader.readAsDataURL(input.files[0]);
+      }
+    }
+
+    function enviarDados(e) {
+      e.preventDefault();
+      if (!assinou) {
+        alert("A assinatura do entregador é obrigatória.");
+        return;
+      }
+
+      document.getElementById('loader').style.display = 'flex';
+      document.getElementById('btn-submit').disabled = true;
+
+      const payload = {
+        nome: document.getElementById('nome').value,
+        documento: document.getElementById('documento').value,
+        volumes: document.getElementById('volumes').value,
+        observacao: document.getElementById('observacao').value,
+        fotoBytes: fotoBase64,
+        assinaturaBytes: canvas.toDataURL('image/png')
+      };
+
+      // Envio via fetch pulando a autenticação de conta do Google
+      fetch(WEB_APP_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        cache: 'no-cache',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+      .then(() => {
+        document.getElementById('loader').style.display = 'none';
+        document.getElementById('conteudo-principal').style.display = 'none';
+        document.getElementById('tela-sucesso').style.display = 'block';
+      })
+      .catch((erro) => {
+        document.getElementById('loader').style.display = 'none';
+        alert("Erro ao processar o registro.");
+        document.getElementById('btn-submit').disabled = false;
+      });
+    }
+
+    function reiniciarFormulario() {
+      document.getElementById('form-mensageria').reset();
+      limparAssinatura();
+      fotoBase64 = "";
+      document.getElementById('preview-foto').style.display = 'none';
+      document.getElementById('preview-foto').src = "";
+      document.getElementById('instrucoes-foto').style.display = 'block';
+      document.getElementById('tag-foto').style.display = 'none';
+      document.getElementById('tela-sucesso').style.display = 'none';
+      document.getElementById('conteudo-principal').style.display = 'block';
+      document.getElementById('btn-submit').disabled = false;
+      setTimeout(ajustarCanvas, 100);
+    }
+  </script>
 </body>
 </html>
