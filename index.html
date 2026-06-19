@@ -193,7 +193,7 @@
       }
     }
 
-    function enviarDados(e) {
+  function enviarDados(e) {
       e.preventDefault();
       if (!assinou) {
         alert("A assinatura do entregador é obrigatória.");
@@ -212,22 +212,25 @@
         assinaturaBytes: canvas.toDataURL('image/png')
       };
 
-      // Envio via fetch pulando a autenticação de conta do Google
+      // Envio otimizado usando formato de texto limpo para o Google aceitar direto do celular
       fetch(WEB_APP_URL, {
         method: 'POST',
-        mode: 'no-cors',
-        cache: 'no-cache',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       })
-      .then(() => {
+      .then(response => response.json())
+      .then((resposta) => {
         document.getElementById('loader').style.display = 'none';
-        document.getElementById('conteudo-principal').style.display = 'none';
-        document.getElementById('tela-sucesso').style.display = 'block';
+        if (resposta.sucesso) {
+          document.getElementById('conteudo-principal').style.display = 'none';
+          document.getElementById('tela-sucesso').style.display = 'block';
+        } else {
+          alert("Erro no script do Google: " + resposta.mensagem);
+          document.getElementById('btn-submit').disabled = false;
+        }
       })
       .catch((erro) => {
         document.getElementById('loader').style.display = 'none';
-        alert("Erro ao processar o registro.");
+        alert("Erro de conexão. Verifique se o link do script está correto.");
         document.getElementById('btn-submit').disabled = false;
       });
     }
